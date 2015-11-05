@@ -132,8 +132,8 @@
 			children = (
 				A10A0BFE0DEDDFD000E5A482 /* fft */,
 				F74ADD0E0DDA24AA0046BEC2 /* iPublicUtility */,
-				F712EAAE0DF0FEAF003F7B58 /* aurio_helper.cpp */,
 				F712EAAF0DF0FEAF003F7B58 /* aurio_helper.h */,
+				F712EAAE0DF0FEAF003F7B58 /* aurio_helper.cpp */,
 				32CA4F630368D1EE00C91783 /* aurioTouch_Prefix.pch */,
 				29B97316FDCFA39411CA2CEA /* main.m */,
 			);
@@ -174,10 +174,10 @@
 		A10A0BFE0DEDDFD000E5A482 /* fft */ = {
 			isa = PBXGroup;
 			children = (
-				0765F5860DF0DC28006468E4 /* rad2fft.c */,
 				0765F5870DF0DC28006468E4 /* rad2fft.h */,
-				A10A0C070DEDDFD000E5A482 /* SpectrumAnalysis.cpp */,
+				0765F5860DF0DC28006468E4 /* rad2fft.c */,
 				A10A0C080DEDDFD000E5A482 /* SpectrumAnalysis.h */,
+				A10A0C070DEDDFD000E5A482 /* SpectrumAnalysis.cpp */,
 			);
 			path = fft;
 			sourceTree = "<group>";
@@ -185,13 +185,13 @@
 		F74ADD0E0DDA24AA0046BEC2 /* iPublicUtility */ = {
 			isa = PBXGroup;
 			children = (
-				F74ADD0F0DDA24AA0046BEC2 /* CADebugMacros.cpp */,
 				F74ADD100DDA24AA0046BEC2 /* CADebugMacros.h */,
-				F74ADD120DDA24AA0046BEC2 /* CAMath.h */,
-				F74ADD150DDA24AA0046BEC2 /* CAStreamBasicDescription.cpp */,
-				F74ADD160DDA24AA0046BEC2 /* CAStreamBasicDescription.h */,
-				F74ADD170DDA24AA0046BEC2 /* CAXException.cpp */,
+				F74ADD0F0DDA24AA0046BEC2 /* CADebugMacros.cpp */,
 				F74ADD180DDA24AA0046BEC2 /* CAXException.h */,
+				F74ADD170DDA24AA0046BEC2 /* CAXException.cpp */,
+				F74ADD120DDA24AA0046BEC2 /* CAMath.h */,
+				F74ADD160DDA24AA0046BEC2 /* CAStreamBasicDescription.h */,
+				F74ADD150DDA24AA0046BEC2 /* CAStreamBasicDescription.cpp */,
 			);
 			path = iPublicUtility;
 			sourceTree = "<group>";

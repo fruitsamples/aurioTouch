@@ -1,51 +1,50 @@
 /*
- 
- File: aurioTouchAppDelegate.mm
- 
- Abstract: The application delegate for the aurioTouch app
- 
- Version: 1.0
- 
- Disclaimer: IMPORTANT:  This Apple software is supplied to you by
- Apple Inc. ("Apple") in consideration of your agreement to the
- following terms, and your use, installation, modification or
- redistribution of this Apple software constitutes acceptance of these
- terms.  If you do not agree with these terms, please do not use,
- install, modify or redistribute this Apple software.
- 
- In consideration of your agreement to abide by the following terms, and
- subject to these terms, Apple grants you a personal, non-exclusive
- license, under Apple's copyrights in this original Apple software (the
- "Apple Software"), to use, reproduce, modify and redistribute the Apple
- Software, with or without modifications, in source and/or binary forms;
- provided that if you redistribute the Apple Software in its entirety and
- without modifications, you must retain this notice and the following
- text and disclaimers in all such redistributions of the Apple Software.
- Neither the name, trademarks, service marks or logos of Apple Inc.
- may be used to endorse or promote products derived from the Apple
- Software without specific prior written permission from Apple.  Except
- as expressly stated in this notice, no other rights or licenses, express
- or implied, are granted by Apple herein, including but not limited to
- any patent rights that may be infringed by your derivative works or by
- other works in which the Apple Software may be incorporated.
- 
- The Apple Software is provided by Apple on an "AS IS" basis.  APPLE
- MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION
- THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS
- FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND
- OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS.
- 
- IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL
- OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION,
- MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED
- AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
- STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
- POSSIBILITY OF SUCH DAMAGE.
- 
- Copyright (C) 2008 Apple Inc. All Rights Reserved.
- 
+
+    File: aurioTouchAppDelegate.mm
+Abstract: n/a
+ Version: 1.7
+
+Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
+Inc. ("Apple") in consideration of your agreement to the following
+terms, and your use, installation, modification or redistribution of
+this Apple software constitutes acceptance of these terms.  If you do
+not agree with these terms, please do not use, install, modify or
+redistribute this Apple software.
+
+In consideration of your agreement to abide by the following terms, and
+subject to these terms, Apple grants you a personal, non-exclusive
+license, under Apple's copyrights in this original Apple software (the
+"Apple Software"), to use, reproduce, modify and redistribute the Apple
+Software, with or without modifications, in source and/or binary forms;
+provided that if you redistribute the Apple Software in its entirety and
+without modifications, you must retain this notice and the following
+text and disclaimers in all such redistributions of the Apple Software.
+Neither the name, trademarks, service marks or logos of Apple Inc. may
+be used to endorse or promote products derived from the Apple Software
+without specific prior written permission from Apple.  Except as
+expressly stated in this notice, no other rights or licenses, express or
+implied, are granted by Apple herein, including but not limited to any
+patent rights that may be infringed by your derivative works or by other
+works in which the Apple Software may be incorporated.
+
+The Apple Software is provided by Apple on an "AS IS" basis.  APPLE
+MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION
+THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND
+OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS.
+
+IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL
+OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION,
+MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED
+AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
+STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+Copyright (C) 2009 Apple Inc. All Rights Reserved.
+
+
 */
 
 #import "aurioTouchAppDelegate.h"
@@ -72,7 +71,7 @@ GLfloat colorLevels[] = {
 @synthesize mute;
 @synthesize inputProc;
 
-
+#pragma mark-
 
 CGPathRef CreateRoundedRectPath(CGRect RECT, CGFloat cornerRadius)
 {
@@ -114,8 +113,28 @@ void cycleOscilloscopeLines()
 	int drawBuffer_i;
 	for (drawBuffer_i=(kNumDrawBuffers - 2); drawBuffer_i>=0; drawBuffer_i--)
 		memmove(drawBuffers[drawBuffer_i + 1], drawBuffers[drawBuffer_i], drawBufferLen);
-}	
+}
 
+#pragma mark -Audio Session Interruption Listener
+
+void rioInterruptionListener(void *inClientData, UInt32 inInterruption)
+{
+	printf("Session interrupted! --- %s ---", inInterruption == kAudioSessionBeginInterruption ? "Begin Interruption" : "End Interruption");
+	
+	aurioTouchAppDelegate *THIS = (aurioTouchAppDelegate*)inClientData;
+	
+	if (inInterruption == kAudioSessionEndInterruption) {
+		// make sure we are again the active session
+		AudioSessionSetActive(true);
+		AudioOutputUnitStart(THIS->rioUnit);
+	}
+	
+	if (inInterruption == kAudioSessionBeginInterruption) {
+		AudioOutputUnitStop(THIS->rioUnit);
+    }
+}
+
+#pragma mark -Audio Session Property Listener
 
 void propListener(	void *                  inClientData,
 					AudioSessionPropertyID	inID,
@@ -172,6 +191,8 @@ void propListener(	void *                  inClientData,
 		
 	}
 }
+
+#pragma mark -RIO Render Callback
 
 static OSStatus	PerformThru(
 							void						*inRefCon, 
@@ -242,6 +263,8 @@ static OSStatus	PerformThru(
 	return err;
 }
 
+#pragma mark-
+
 - (void)applicationDidFinishLaunching:(UIApplication *)application
 {	
 	// Turn off the idle timer, since this app doesn't rely on constant touch input
@@ -282,10 +305,15 @@ static OSStatus	PerformThru(
 		XThrowIfError(AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareSampleRate, &size, &hwSampleRate), "couldn't get hw sample rate");
 		
 		XThrowIfError(SetupRemoteIO(rioUnit, inputProc, thruFormat), "couldn't setup remote i/o unit");
-
+		
 		dcFilter = new DCRejectionFilter[thruFormat.NumberChannels()];
 
 		XThrowIfError(AudioOutputUnitStart(rioUnit), "couldn't start remote i/o unit");
+
+		size = sizeof(thruFormat);
+		XThrowIfError(AudioUnitGetProperty(rioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 1, &thruFormat, &size), "couldn't get the remote I/O unit's output client format");
+		thruFormat.Print();
+		
 		unitIsRunning = 1;
 	}
 	catch (CAXException &e) {
@@ -852,7 +880,7 @@ static OSStatus	PerformThru(
 	
 	glVertexPointer(2, GL_FLOAT, 0, quadCoords);
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glTexCoordPointer(1, GL_SHORT, 0, texCoords);
+	glTexCoordPointer(2, GL_SHORT, 0, texCoords);
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);	
 	
 	glColor4f(1., 1., 1., 1.);
