@@ -2,7 +2,7 @@
 
     File: aurio_helper.cpp
 Abstract: Helper class for manipulating the remote i/o audio unit
- Version: 1.7
+ Version: 1.11
 
 Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
 Inc. ("Apple") in consideration of your agreement to the following
@@ -83,7 +83,7 @@ int SetupRemoteIO (AudioUnit& inRemoteIOUnit, AURenderCallbackStruct inRenderPro
 	
 		XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, 0, &inRenderProc, sizeof(inRenderProc)), "couldn't set remote i/o render callback");
 		
-        // set our required format - Canonical AU format for the device, 8.24 LPCM non-interleaved
+        // set our required format - Canonical AU format: LPCM non-interleaved 8.24 fixed point
         outFormat.SetAUCanonical(2, false);
 		XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &outFormat, sizeof(outFormat)), "couldn't set the remote I/O unit's output client format");
 		XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 1, &outFormat, sizeof(outFormat)), "couldn't set the remote I/O unit's input client format");
@@ -117,7 +117,7 @@ inline SInt32 smul32by16(SInt32 i32, SInt16 i16)
 	asm volatile("smulwb %0, %1, %2" : "=r"(r) : "r"(i32), "r"(i16));
 	return r;
 #else	
-	return (SInt32)(((SInt64)i32 * (SInt64)i16) >> 32);
+	return (SInt32)(((SInt64)i32 * (SInt64)i16) >> 16);
 #endif
 }
 
@@ -128,7 +128,7 @@ inline SInt32 smulAdd32by16(SInt32 i32, SInt16 i16, SInt32 acc)
 	asm volatile("smlawb %0, %1, %2, %3" : "=r"(r) : "r"(i32), "r"(i16), "r"(acc));
 	return r;
 #else		
-	return ((SInt32)(((SInt64)i32 * (SInt64)i16) >> 32) + acc);
+	return ((SInt32)(((SInt64)i32 * (SInt64)i16) >> 16) + acc);
 #endif
 }
 

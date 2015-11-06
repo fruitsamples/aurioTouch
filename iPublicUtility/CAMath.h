@@ -2,7 +2,7 @@
 
     File: CAMath.h
 Abstract: Helper class for various math functions
- Version: 1.7
+ Version: 1.11
 
 Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
 Inc. ("Apple") in consideration of your agreement to the following

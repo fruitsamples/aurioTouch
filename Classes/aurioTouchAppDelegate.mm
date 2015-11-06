@@ -2,7 +2,7 @@
 
     File: aurioTouchAppDelegate.mm
 Abstract: n/a
- Version: 1.7
+ Version: 1.11
 
 Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
 Inc. ("Apple") in consideration of your agreement to the following
@@ -279,17 +279,12 @@ static OSStatus	PerformThru(
 	inputProc.inputProc = PerformThru;
 	inputProc.inputProcRefCon = self;
 
-	fftBufferManager = new FFTBufferManager();
 	CFURLRef url = NULL;
 	try {	
 		url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, CFStringRef([[NSBundle mainBundle] pathForResource:@"button_press" ofType:@"caf"]), kCFURLPOSIXPathStyle, false);
 		XThrowIfError(AudioServicesCreateSystemSoundID(url, &buttonPressSound), "couldn't create button tap alert sound");
 		CFRelease(url);
 		
-		url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, CFStringRef([[NSBundle mainBundle] pathForResource:@"double_tap" ofType:@"caf"]), kCFURLPOSIXPathStyle, false);
-		XThrowIfError(AudioServicesCreateSystemSoundID(url, &doubleTapSound), "couldn't create double tap alert sound");
-		CFRelease(url);
-
 		// Initialize and configure the audio session
 		XThrowIfError(AudioSessionInitialize(NULL, NULL, rioInterruptionListener, self), "couldn't initialize audio session");
 		XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active\n");
@@ -308,11 +303,19 @@ static OSStatus	PerformThru(
 		
 		dcFilter = new DCRejectionFilter[thruFormat.NumberChannels()];
 
+		UInt32 maxFPS;
+		size = sizeof(maxFPS);
+		XThrowIfError(AudioUnitGetProperty(rioUnit, kAudioUnitProperty_MaximumFramesPerSlice, kAudioUnitScope_Global, 0, &maxFPS, &size), "couldn't get the remote I/O unit's max frames per slice");
+		
+		fftBufferManager = new FFTBufferManager(maxFPS);
+		l_fftData = new int32_t[maxFPS/2];
+		
+		oscilLine = (GLfloat*)malloc(drawBufferLen * 2 * sizeof(GLfloat));
+
 		XThrowIfError(AudioOutputUnitStart(rioUnit), "couldn't start remote i/o unit");
 
 		size = sizeof(thruFormat);
 		XThrowIfError(AudioUnitGetProperty(rioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 1, &thruFormat, &size), "couldn't get the remote I/O unit's output client format");
-		thruFormat.Print();
 		
 		unitIsRunning = 1;
 	}
@@ -401,6 +404,8 @@ static OSStatus	PerformThru(
 	[view release];
 	[window release];
 	
+	free(oscilLine);
+
 	[super dealloc];
 }
 
@@ -649,7 +654,7 @@ static OSStatus	PerformThru(
 		if (fftBufferManager->HasNewAudioData())
 		{
 			if (fftBufferManager->ComputeFFT(l_fftData))
-				[self setFFTData:l_fftData length:kDefaultFFTBufferSize / 2];
+				[self setFFTData:l_fftData length:fftBufferManager->GetNumberFrames() / 2];
 			else
 				hasNewFFTData = NO;
 		}
@@ -690,12 +695,15 @@ static OSStatus	PerformThru(
 	
 	
 	
-	GLfloat *oscilLine, *oscilLine_ptr;
+	GLfloat *oscilLine_ptr;
 	GLfloat max = drawBufferLen;
 	SInt8 *drawBuffer_ptr;
 	
 	// Alloc an array for our oscilloscope line vertices
-	oscilLine = (GLfloat*)malloc(drawBufferLen * 2 * sizeof(GLfloat));
+	if (resetOscilLine) {
+		oscilLine = (GLfloat*)realloc(oscilLine, drawBufferLen * 2 * sizeof(GLfloat));
+		resetOscilLine = NO;
+	}
 	
 	glPushMatrix();
 	
@@ -743,9 +751,7 @@ static OSStatus	PerformThru(
 	}
 	
 	glPopMatrix();
-	
-	free(oscilLine);
-	
+		
 	glPopMatrix();
 }
 
@@ -846,7 +852,7 @@ static OSStatus	PerformThru(
 	{
 		if (fftBufferManager->ComputeFFT(l_fftData))
 		{
-			[self setFFTData:l_fftData length:kDefaultFFTBufferSize / 2];
+			[self setFFTData:l_fftData length:fftBufferManager->GetNumberFrames() / 2];
 		}
 		else
 			hasNewFFTData = NO;
@@ -940,6 +946,7 @@ static OSStatus	PerformThru(
 		// Adjust our draw buffer length accordingly,
 		drawBufferLen -= 12 * (int)pinchDiff;
 		drawBufferLen = CLAMP(kMinDrawSamples, drawBufferLen, kMaxDrawSamples);
+		resetOscilLine = YES;
 		
 		// and display the size of our oscilloscope window in our overlay view
 		sampleSizeText.text = [NSString stringWithFormat:@"%i ms", drawBufferLen / (int)(hwSampleRate / 1000.)];
@@ -961,7 +968,7 @@ static OSStatus	PerformThru(
 	// any tap in sonogram view will exit back to the waveform
 	if (self.displayMode == aurioTouchDisplayModeSpectrum)
 	{
-		AudioServicesPlaySystemSound(doubleTapSound);
+		AudioServicesPlaySystemSound(buttonPressSound);
 		self.displayMode = aurioTouchDisplayModeOscilloscopeWaveform;
 		return;
 	}
@@ -969,7 +976,7 @@ static OSStatus	PerformThru(
 	UITouch *touch = [touches anyObject];
 	if (CGRectContainsPoint(CGRectMake(0., 5., 52., 99.), [touch locationInView:view])) // The Sonogram button was touched
 	{
-		AudioServicesPlaySystemSound(doubleTapSound);
+		AudioServicesPlaySystemSound(buttonPressSound);
 		if ((self.displayMode == aurioTouchDisplayModeOscilloscopeWaveform) || (self.displayMode == aurioTouchDisplayModeOscilloscopeFFT))
 		{
 			if (!initted_spectrum) [self setupViewForSpectrum];
@@ -985,7 +992,6 @@ static OSStatus	PerformThru(
 	}
 	else if (CGRectContainsPoint(CGRectMake(0., 203, 52., 99.), [touch locationInView:view])) // The FFT button was touched
 	{
-		
 		AudioServicesPlaySystemSound(buttonPressSound);
 		self.displayMode = (self.displayMode == aurioTouchDisplayModeOscilloscopeWaveform) ?  aurioTouchDisplayModeOscilloscopeFFT :
 																							aurioTouchDisplayModeOscilloscopeWaveform;

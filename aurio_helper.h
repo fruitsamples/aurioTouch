@@ -2,7 +2,7 @@
 
     File: aurio_helper.h
 Abstract: Helper class for manipulating the remote i/o audio unit
- Version: 1.7
+ Version: 1.11
 
 Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
 Inc. ("Apple") in consideration of your agreement to the following
@@ -53,9 +53,9 @@ Copyright (C) 2009 Apple Inc. All Rights Reserved.
 #include "CAStreamBasicDescription.h"
 
 #define kNumDrawBuffers 12
-#define kDefaultDrawSamples 512
+#define kDefaultDrawSamples 1024
 #define kMinDrawSamples 64
-#define kMaxDrawSamples 2048
+#define kMaxDrawSamples 4096
 
 extern int drawBufferIdx;
 extern int drawBufferLen;

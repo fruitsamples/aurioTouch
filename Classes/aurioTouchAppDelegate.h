@@ -2,7 +2,7 @@
 
     File: aurioTouchAppDelegate.h
 Abstract: App delegate
- Version: 1.7
+ Version: 1.11
 
 Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
 Inc. ("Apple") in consideration of your agreement to the following
@@ -82,13 +82,13 @@ inline double linearInterp(double valA, double valB, double fract)
 }
 
 @interface aurioTouchAppDelegate : NSObject <UIApplicationDelegate, EAGLViewDelegate> {
-	IBOutlet UIWindow			*window;
-	IBOutlet EAGLView			*view;
+	IBOutlet UIWindow*			window;
+	IBOutlet EAGLView*			view;
 	
-	UIImageView					*sampleSizeOverlay;
-	UILabel						*sampleSizeText;
+	UIImageView*				sampleSizeOverlay;
+	UILabel*					sampleSizeText;
 	
-	SInt32						*fftData;
+	SInt32*						fftData;
 	NSUInteger					fftLength;
 	BOOL						hasNewFFTData;
 	
@@ -96,7 +96,7 @@ inline double linearInterp(double valA, double valB, double fract)
 	int							unitIsRunning;
 	
 	BOOL						initted_oscilloscope, initted_spectrum;
-	UInt32						*texBitBuffer;
+	UInt32*						texBitBuffer;
 	CGRect						spectrumRect;
 	
 	GLuint						bgTexture;
@@ -108,35 +108,35 @@ inline double linearInterp(double valA, double valB, double fract)
 	
 	BOOL						mute;
 	
-	SpectrumLinkedTexture		*firstTex;
-	FFTBufferManager			*fftBufferManager;
-	DCRejectionFilter			*dcFilter;
+	SpectrumLinkedTexture*		firstTex;
+	FFTBufferManager*			fftBufferManager;
+	DCRejectionFilter*			dcFilter;
 	CAStreamBasicDescription	thruFormat;
 	Float64						hwSampleRate;
 	
-	UIEvent						*pinchEvent;
+	UIEvent*					pinchEvent;
 	CGFloat						lastPinchDist;
 	
 	AURenderCallbackStruct		inputProc;
 
 	SystemSoundID				buttonPressSound;
-	SystemSoundID				doubleTapSound;
 	
-	int32_t						l_fftData[kDefaultFFTBufferSize/2];
+	int32_t*					l_fftData;
+
+	GLfloat*					oscilLine;
+	BOOL						resetOscilLine;
 }
 
-@property (nonatomic, retain)		UIWindow *window;
-@property (nonatomic, retain)		EAGLView *view;
+@property (nonatomic, retain)	UIWindow*				window;
+@property (nonatomic, retain)	EAGLView*				view;
 
-@property							aurioTouchDisplayMode displayMode;
-@property							FFTBufferManager *fftBufferManager;
+@property (assign)				aurioTouchDisplayMode	displayMode;
+@property						FFTBufferManager*		fftBufferManager;
 
-@property AudioUnit					rioUnit;
-@property int						unitIsRunning;
-@property BOOL						mute;
-@property AURenderCallbackStruct	inputProc;
-
-- (void)setFFTData:(int32_t *)FFTDATA length:(NSUInteger)LENGTH;
+@property (nonatomic, assign)	AudioUnit				rioUnit;
+@property (nonatomic, assign)	int						unitIsRunning;
+@property (nonatomic, assign)	BOOL					mute;
+@property (nonatomic, assign)	AURenderCallbackStruct	inputProc;
 
 @end
 

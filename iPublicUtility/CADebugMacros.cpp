@@ -2,7 +2,7 @@
 
     File: CADebugMacros.cpp
 Abstract: Helper class for printing debug messages
- Version: 1.7
+ Version: 1.11
 
 Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
 Inc. ("Apple") in consideration of your agreement to the following

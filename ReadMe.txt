@@ -1,5 +1,5 @@
 
-oalTouch
+aurioTouch
 
 ===========================================================================
 DESCRIPTION:
@@ -58,11 +58,14 @@ aurio_helper.h
 
 Helper functions for manipulating the remote i/o audio unit, responsible for setting up the remote i/o.
 
-aurioTouchAppDelegate.haurioTouchAppDelegate.mm
+aurioTouchAppDelegate.h
+aurioTouchAppDelegate.mm
+
 
 The application delegate for the aurioTouch app, responsible for handling touch events and drawing.
 
-FFTBufferManager.cppFFTBufferManager.h
+FFTBufferManager.cpp
+FFTBufferManager.h
 
 This class manages buffering and computation for FFT analysis on input audio data. The methods provided are used to grab the audio, buffer it, and perform the FFT when sufficient data is available.
 

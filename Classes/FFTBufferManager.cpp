@@ -2,7 +2,7 @@
 
     File: FFTBufferManager.cpp
 Abstract: This class manages buffering and computation for FFT analysis on input audio data. The methods provided are used to grab the audio, buffer it, and perform the FFT when sufficient data is available
- Version: 1.7
+ Version: 1.11
 
 Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
 Inc. ("Apple") in consideration of your agreement to the following
@@ -51,15 +51,16 @@ Copyright (C) 2009 Apple Inc. All Rights Reserved.
 
 #define min(x,y) (x < y) ? x : y
 
-FFTBufferManager::FFTBufferManager() :
+FFTBufferManager::FFTBufferManager(UInt32 inNumberFrames) :
 	mNeedsAudioData(0),
 	mHasAudioData(0),
-	mAudioBufferSize(kDefaultFFTBufferSize * sizeof(int32_t)),
+	mNumberFrames(inNumberFrames),
+	mAudioBufferSize(inNumberFrames * sizeof(int32_t)),
     mAudioBufferCurrentIndex(0)
     
 {
 	mAudioBuffer = (int32_t*)malloc(mAudioBufferSize);	
-	mSpectrumAnalysis = SpectrumAnalysisCreate(kDefaultFFTBufferSize);
+	mSpectrumAnalysis = SpectrumAnalysisCreate(mNumberFrames);
 	OSAtomicIncrement32Barrier(&mNeedsAudioData);
 }
 
