@@ -2,7 +2,7 @@
 
     File: aurioTouchAppDelegate.mm
 Abstract: n/a
- Version: 1.11
+ Version: 1.21
 
 Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
 Inc. ("Apple") in consideration of your agreement to the following
@@ -42,7 +42,7 @@ AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
 STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
-Copyright (C) 2009 Apple Inc. All Rights Reserved.
+Copyright (C) 2010 Apple Inc. All Rights Reserved.
 
 
 */
@@ -66,6 +66,7 @@ GLfloat colorLevels[] = {
 
 @synthesize rioUnit;
 @synthesize unitIsRunning;
+@synthesize unitHasBeenCreated;
 @synthesize displayMode;
 @synthesize fftBufferManager;
 @synthesize mute;
@@ -125,12 +126,12 @@ void rioInterruptionListener(void *inClientData, UInt32 inInterruption)
 	
 	if (inInterruption == kAudioSessionEndInterruption) {
 		// make sure we are again the active session
-		AudioSessionSetActive(true);
-		AudioOutputUnitStart(THIS->rioUnit);
+		XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active");
+		XThrowIfError(AudioOutputUnitStart(THIS->rioUnit), "couldn't start unit");
 	}
 	
 	if (inInterruption == kAudioSessionBeginInterruption) {
-		AudioOutputUnitStop(THIS->rioUnit);
+		XThrowIfError(AudioOutputUnitStop(THIS->rioUnit), "couldn't stop unit");
     }
 }
 
@@ -145,15 +146,40 @@ void propListener(	void *                  inClientData,
 	if (inID == kAudioSessionProperty_AudioRouteChange)
 	{
 		try {
-			// if there was a route change, we need to dispose the current rio unit and create a new one
-			XThrowIfError(AudioComponentInstanceDispose(THIS->rioUnit), "couldn't dispose remote i/o unit");		
-
-			SetupRemoteIO(THIS->rioUnit, THIS->inputProc, THIS->thruFormat);
-			
-			UInt32 size = sizeof(THIS->hwSampleRate);
-			XThrowIfError(AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareSampleRate, &size, &THIS->hwSampleRate), "couldn't get new sample rate");
-
-			XThrowIfError(AudioOutputUnitStart(THIS->rioUnit), "couldn't start unit");
+			 UInt32 isAudioInputAvailable; 
+			 UInt32 size = sizeof(isAudioInputAvailable);
+			 XThrowIfError(AudioSessionGetProperty(kAudioSessionProperty_AudioInputAvailable, &size, &isAudioInputAvailable), "couldn't get AudioSession AudioInputAvailable property value");
+			 
+			 if(THIS->unitIsRunning && !isAudioInputAvailable)
+			 {
+				 XThrowIfError(AudioOutputUnitStop(THIS->rioUnit), "couldn't stop unit");
+				 THIS->unitIsRunning = false;
+			 }
+			 
+			 else if(!THIS->unitIsRunning && isAudioInputAvailable)
+			 {
+				 XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active\n");
+			 
+				 if (!THIS->unitHasBeenCreated)	// the rio unit is being created for the first time
+				 {
+					 XThrowIfError(SetupRemoteIO(THIS->rioUnit, THIS->inputProc, THIS->thruFormat), "couldn't setup remote i/o unit");
+					 THIS->unitHasBeenCreated = true;
+					 
+					 THIS->dcFilter = new DCRejectionFilter[THIS->thruFormat.NumberChannels()];
+					 
+					 UInt32 maxFPS;
+					 size = sizeof(maxFPS);
+					 XThrowIfError(AudioUnitGetProperty(THIS->rioUnit, kAudioUnitProperty_MaximumFramesPerSlice, kAudioUnitScope_Global, 0, &maxFPS, &size), "couldn't get the remote I/O unit's max frames per slice");
+					 
+					 THIS->fftBufferManager = new FFTBufferManager(maxFPS);
+					 THIS->l_fftData = new int32_t[maxFPS/2];
+					 
+					 THIS->oscilLine = (GLfloat*)malloc(drawBufferLen * 2 * sizeof(GLfloat));
+				 }
+				 
+				 XThrowIfError(AudioOutputUnitStart(THIS->rioUnit), "couldn't start unit");
+				 THIS->unitIsRunning = true;
+			 }
 						
 			// we need to rescale the sonogram view's color thresholds for different input
 			CFStringRef newRoute;
@@ -287,19 +313,21 @@ static OSStatus	PerformThru(
 		
 		// Initialize and configure the audio session
 		XThrowIfError(AudioSessionInitialize(NULL, NULL, rioInterruptionListener, self), "couldn't initialize audio session");
-		XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active\n");
 			
 		UInt32 audioCategory = kAudioSessionCategory_PlayAndRecord;
 		XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category");
 		XThrowIfError(AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, propListener, self), "couldn't set property listener");
-			
+
 		Float32 preferredBufferSize = .005;
 		XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration, sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
 		
 		UInt32 size = sizeof(hwSampleRate);
 		XThrowIfError(AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareSampleRate, &size, &hwSampleRate), "couldn't get hw sample rate");
 		
+		XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active\n");
+
 		XThrowIfError(SetupRemoteIO(rioUnit, inputProc, thruFormat), "couldn't setup remote i/o unit");
+		unitHasBeenCreated = true;
 		
 		dcFilter = new DCRejectionFilter[thruFormat.NumberChannels()];
 
@@ -393,6 +421,25 @@ static OSStatus	PerformThru(
 	// Set up the view to refresh at 20 hz
 	[view setAnimationInterval:1./20.];
 	[view startAnimation];
+}
+
+- (void)applicationDidBecomeActive:(UIApplication *)application {
+	//start animation now that we're in the foreground
+    view.applicationResignedActive = NO;
+	[view startAnimation];
+	AudioSessionSetActive(true);
+}
+
+- (void)applicationWillResignActive:(UIApplication *)application {
+	//stop animation before going into background
+    view.applicationResignedActive = YES;
+    [view stopAnimation];
+}
+
+- (void)applicationDidEnterBackground:(UIApplication *)application {
+}
+
+- (void)applicationWillEnterForeground:(UIApplication *)application {
 }
 
 
@@ -617,9 +664,9 @@ static OSStatus	PerformThru(
 		// Draw our buttons
 		const GLfloat vertices[] = {
 			0., 0.,
-			128, 0., 
+			112, 0., 
 			0.,  64,
-			128,  64,
+			112,  64,
 		};
 		const GLshort texCoords[] = {
 			0, 0,
@@ -974,28 +1021,31 @@ static OSStatus	PerformThru(
 	}
 	
 	UITouch *touch = [touches anyObject];
-	if (CGRectContainsPoint(CGRectMake(0., 5., 52., 99.), [touch locationInView:view])) // The Sonogram button was touched
+	if (unitIsRunning)
 	{
-		AudioServicesPlaySystemSound(buttonPressSound);
-		if ((self.displayMode == aurioTouchDisplayModeOscilloscopeWaveform) || (self.displayMode == aurioTouchDisplayModeOscilloscopeFFT))
+		if (CGRectContainsPoint(CGRectMake(0., 5., 52., 99.), [touch locationInView:view])) // The Sonogram button was touched
 		{
-			if (!initted_spectrum) [self setupViewForSpectrum];
-			[self clearTextures];
-			self.displayMode = aurioTouchDisplayModeSpectrum;
+			AudioServicesPlaySystemSound(buttonPressSound);
+			if ((self.displayMode == aurioTouchDisplayModeOscilloscopeWaveform) || (self.displayMode == aurioTouchDisplayModeOscilloscopeFFT))
+			{
+				if (!initted_spectrum) [self setupViewForSpectrum];
+				[self clearTextures];
+				self.displayMode = aurioTouchDisplayModeSpectrum;
+			}
 		}
-	}
-	else if (CGRectContainsPoint(CGRectMake(0., 104., 52., 99.), [touch locationInView:view])) // The Mute button was touched
-	{
-		AudioServicesPlaySystemSound(buttonPressSound);
-		self.mute = !(self.mute);
-		return;
-	}
-	else if (CGRectContainsPoint(CGRectMake(0., 203, 52., 99.), [touch locationInView:view])) // The FFT button was touched
-	{
-		AudioServicesPlaySystemSound(buttonPressSound);
-		self.displayMode = (self.displayMode == aurioTouchDisplayModeOscilloscopeWaveform) ?  aurioTouchDisplayModeOscilloscopeFFT :
-																							aurioTouchDisplayModeOscilloscopeWaveform;
-		return;
+		else if (CGRectContainsPoint(CGRectMake(0., 104., 52., 99.), [touch locationInView:view])) // The Mute button was touched
+		{
+			AudioServicesPlaySystemSound(buttonPressSound);
+			self.mute = !(self.mute);
+			return;
+		}
+		else if (CGRectContainsPoint(CGRectMake(0., 203, 52., 99.), [touch locationInView:view])) // The FFT button was touched
+		{
+			AudioServicesPlaySystemSound(buttonPressSound);
+			self.displayMode = (self.displayMode == aurioTouchDisplayModeOscilloscopeWaveform) ?  aurioTouchDisplayModeOscilloscopeFFT :
+																								aurioTouchDisplayModeOscilloscopeWaveform;
+			return;
+		}
 	}
 }
 

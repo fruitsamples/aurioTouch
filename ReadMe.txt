@@ -4,7 +4,7 @@ aurioTouch
 ===========================================================================
 DESCRIPTION:
 
-aurioTouch demonstrates use of the remote i/o audio unit for handling audio input and output. The application can display the input audio in one of the forms, a regular time domain waveform, a frequency domain waveform (computed by performing a fast fourier transform on the incoming signal), and a sonogram view (a view displaying the frequency content of a signal over time, with the color signaling relative power, the y axis being frequency and the x as time). Tap the sono button to switch to a sonogram view, tap anywhere on the screen to return to the oscilloscope. Tap the FFT button to perform and display the input data after an FFT transform. Pinch in the oscilloscope view to expand and contract the scale for the x axis.
+aurioTouch demonstrates use of the remote i/o audio unit for handling audio input and output. The application can display the input audio in one of the forms, a regular time domain waveform, a frequency domain waveform (computed by performing a fast fourier transform on the incoming signal), and a sonogram view (a view displaying the frequency content of a signal over time, with the color signaling relative power, the y axis being frequency and the x as time). Tap the sonogram button to switch to a sonogram view, tap anywhere on the screen to return to the oscilloscope. Tap the FFT button to perform and display the input data after an FFT transform. Pinch in the oscilloscope view to expand and contract the scale for the x axis.
 
 The code in auriouTouch uses the remote i/o audio unit (AURemoteIO) for input and output of audio, and OpenGL for display of the input waveform. The application also uses Audio Session Services to manage route changes (as described in Core Audio Overview).
 
@@ -23,7 +23,8 @@ aurioTouch does not demonstrate how to handle interruptions.
 ===========================================================================
 RELATED INFORMATION:
 
-Core Audio Overview, June 2008
+Core Audio Overview
+WWDC 2010 video sessions and resources
 
 
 ===========================================================================
@@ -35,14 +36,14 @@ aurioTouch requires audio input, and so is not appropriate for the first generat
 ===========================================================================
 BUILD REQUIREMENTS:
 
-Mac OS X v10.5.3, Xcode 3.1, iPhone OS 2.0, iPhone SDK for iPhone OS 2.0 and later
+Mac OS X v10.6.4, Xcode 3.2, iOS 4.1, iOS SDK 4.1 or later
 
 
 ===========================================================================
 RUNTIME REQUIREMENTS:
 
-Simulator: Mac OS X v10.5.3, iPhone SDK Beta 6
-iPhone: iPhone OS 2.0
+Simulator: Mac OS X v10.6.x, iOS SDK 4.1 or later
+iPhone: iOS 4.1
 
 
 ===========================================================================
@@ -99,4 +100,4 @@ CAStreamBasicDescription.h
 A helper class for AudioStreamBasicDescription handling and manipulation.
 
 ================================================================================
-Copyright (C) 2008 Apple Inc. All rights reserved.
+Copyright (C) 2008-2010 Apple Inc. All rights reserved.

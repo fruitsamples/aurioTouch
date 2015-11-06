@@ -2,7 +2,7 @@
 
     File: EAGLView.m
 Abstract: This class wraps the CAEAGLLayer from CoreAnimation into a convenient UIView subclass. The view content is basically an EAGL surface you render your OpenGL scene into.  Note that setting the view non-opaque will only work if the EAGL surface has an alpha channel.
- Version: 1.11
+ Version: 1.21
 
 Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
 Inc. ("Apple") in consideration of your agreement to the following
@@ -42,7 +42,7 @@ AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
 STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
-Copyright (C) 2009 Apple Inc. All Rights Reserved.
+Copyright (C) 2010 Apple Inc. All Rights Reserved.
 
 
 */
@@ -69,7 +69,7 @@ Copyright (C) 2009 Apple Inc. All Rights Reserved.
 
 @implementation EAGLView
 
-@synthesize animationInterval;
+@synthesize animationInterval, applicationResignedActive;
 
 // You must implement this
 + (Class) layerClass
@@ -159,20 +159,17 @@ Copyright (C) 2009 Apple Inc. All Rights Reserved.
 	}
 }
 
-
 - (void)startAnimation
 {
 	animationTimer = [NSTimer scheduledTimerWithTimeInterval:animationInterval target:self selector:@selector(drawView) userInfo:nil repeats:YES];
 	animationStarted = [NSDate timeIntervalSinceReferenceDate];
 }
 
-
 - (void)stopAnimation
 {
 	[animationTimer invalidate];
 	animationTimer = nil;
 }
-
 
 - (void)setAnimationInterval:(NSTimeInterval)interval
 {
@@ -206,6 +203,10 @@ Copyright (C) 2009 Apple Inc. All Rights Reserved.
 // Updates the OpenGL view when the timer fires
 - (void)drawView
 {
+    // the NSTimer seems to fire one final time even though it's been invalidated
+    // so just make sure and not draw if we're resigning active
+    if (self.applicationResignedActive) return;
+    
 	// Make sure that you are drawing to the current context
 	[EAGLContext setCurrentContext:context];
 	

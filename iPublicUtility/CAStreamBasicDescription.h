@@ -2,7 +2,7 @@
 
     File: CAStreamBasicDescription.h
 Abstract: Helper class for audio stream descriptions
- Version: 1.11
+ Version: 1.21
 
 Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
 Inc. ("Apple") in consideration of your agreement to the following
@@ -42,7 +42,7 @@ AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
 STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
-Copyright (C) 2009 Apple Inc. All Rights Reserved.
+Copyright (C) 2010 Apple Inc. All Rights Reserved.
 
 
 */
@@ -167,7 +167,7 @@ public:
 				// note: leaves sample rate untouched
 	{
 		mFormatID = kAudioFormatLinearPCM;
-#if CA_ENV_MACOSX
+#if TARGET_IPHONE_SIMULATOR
 		int sampleSize = sizeof(Float32);
 		mFormatFlags = kAudioFormatFlagsNativeFloatPacked;
 #else
@@ -195,7 +195,7 @@ public:
 		UInt32 flagsMask = (kLinearPCMFormatFlagIsFloat | kLinearPCMFormatFlagIsBigEndian | kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked | kLinearPCMFormatFlagIsAlignedHigh | kLinearPCMFormatFlagsSampleFractionMask);
 #endif
 		bool interleaved = (mFormatFlags & kAudioFormatFlagIsNonInterleaved) == 0;
-#if CA_ENV_MACOSX
+#if TARGET_IPHONE_SIMULATOR
 		unsigned sampleSize = sizeof(Float32);
 		reqFormatFlags = kAudioFormatFlagsNativeFloatPacked;
 #else

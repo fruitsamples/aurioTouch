@@ -2,7 +2,7 @@
 
     File: EAGLView.h
 Abstract: This class wraps the CAEAGLLayer from CoreAnimation into a convenient UIView subclass. The view content is basically an EAGL surface you render your OpenGL scene into.  Note that setting the view non-opaque will only work if the EAGL surface has an alpha channel.
- Version: 1.11
+ Version: 1.21
 
 Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
 Inc. ("Apple") in consideration of your agreement to the following
@@ -42,7 +42,7 @@ AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
 STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
-Copyright (C) 2009 Apple Inc. All Rights Reserved.
+Copyright (C) 2010 Apple Inc. All Rights Reserved.
 
 
 */
@@ -86,6 +86,8 @@ Copyright (C) 2009 Apple Inc. All Rights Reserved.
 	NSTimer *animationTimer;
 	NSTimeInterval animationInterval;
 	NSTimeInterval animationStarted;
+    
+    BOOL applicationResignedActive;
 }
 
 - (void)startAnimation;
@@ -94,5 +96,6 @@ Copyright (C) 2009 Apple Inc. All Rights Reserved.
 
 @property NSTimeInterval animationInterval;
 @property(assign) id <EAGLViewDelegate> delegate;
+@property(assign) BOOL applicationResignedActive;
 
 @end

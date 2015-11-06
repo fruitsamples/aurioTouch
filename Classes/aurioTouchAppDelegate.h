@@ -2,7 +2,7 @@
 
     File: aurioTouchAppDelegate.h
 Abstract: App delegate
- Version: 1.11
+ Version: 1.21
 
 Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
 Inc. ("Apple") in consideration of your agreement to the following
@@ -42,7 +42,7 @@ AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
 STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
-Copyright (C) 2009 Apple Inc. All Rights Reserved.
+Copyright (C) 2010 Apple Inc. All Rights Reserved.
 
 
 */
@@ -93,7 +93,8 @@ inline double linearInterp(double valA, double valB, double fract)
 	BOOL						hasNewFFTData;
 	
 	AudioUnit					rioUnit;
-	int							unitIsRunning;
+	BOOL						unitIsRunning;
+	BOOL						unitHasBeenCreated;
 	
 	BOOL						initted_oscilloscope, initted_spectrum;
 	UInt32*						texBitBuffer;
@@ -134,7 +135,8 @@ inline double linearInterp(double valA, double valB, double fract)
 @property						FFTBufferManager*		fftBufferManager;
 
 @property (nonatomic, assign)	AudioUnit				rioUnit;
-@property (nonatomic, assign)	int						unitIsRunning;
+@property (nonatomic, assign)	BOOL						unitIsRunning;
+@property (nonatomic, assign)	BOOL						unitHasBeenCreated;
 @property (nonatomic, assign)	BOOL					mute;
 @property (nonatomic, assign)	AURenderCallbackStruct	inputProc;
 
